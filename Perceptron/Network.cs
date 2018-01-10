@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using intAnaliza3;
+using Perceptron;
 
-using static intAnaliza3.Neuron;
+using static Perceptron.Neuron;
 
-namespace intAnaliza3
+namespace Perceptron
 {
     public class Network
     {
@@ -15,25 +15,20 @@ namespace intAnaliza3
         private Neuron[] hiddenLayer;
         private Neuron[] outputLayer;
 
-        private double networkDelta = 0;
-
         public Network(int inputsNumber, int hiddenNumber, int outputsNumber)
         {
-            //tworzenie warstwy wejsciowej
             inputLayer = new Neuron[inputsNumber];
             for (int i = 0; i < inputLayer.Length; i++)
             {
-                // nie sigmoida - false
                 inputLayer[i] = new Neuron(false, 1);
             }
-            //tworzenie warstwy ukrytej
+
             hiddenLayer = new Neuron[hiddenNumber];
             for (int i = 0; i < hiddenLayer.Length; i++)
             {
-                // neuron sigmoida - true
                 hiddenLayer[i] = new Neuron(true, inputsNumber);
             }
-            //tworzenie warstwy wyjsciowej
+
             outputLayer = new Neuron[outputsNumber];
             for (int i = 0; i < outputLayer.Length; i++)
             {
@@ -41,7 +36,7 @@ namespace intAnaliza3
             }
         }
 
-        public string train(double[][] input, double[][] output, double finalDelta, int maxEpochCount)
+        public double[] train(double[] input, double[] output, int maxEpochCount)
         {
             string finalResults = "";
             bool[] finished = new bool[input.Length];
@@ -52,122 +47,51 @@ namespace intAnaliza3
                 finished[i] = false;
             }
 
-            double[][] hiddenCopy = new double[input.Length][];
+            double[] hiddenCopy = new double[hiddenLayer.Length];
             for(i = 0; i<hiddenCopy.Length; i++)
             {
-                hiddenCopy[i] = new double[hiddenLayer.Length];
+                hiddenCopy[i] = new double();
             }
 
-            double[][] outputCopy = new double[input.Length][];
+            double[] outputCopy = new double[input.Length];
             for (i = 0; i < outputLayer.Length; i++)
             {
-                outputCopy[i] = new double[outputLayer.Length];
+                outputCopy[i] = new double();
             }
 
             i = 0;
 
             while(i < maxEpochCount)
             {
-                networkDelta = 0;
-
-                for(int j = 0; j < input.Length; j++)
+                for (int j = 0; j < input.Length; j++)
                 {
-                    fPropagate(input[j]);
+                    fPropagate(input);
 
-                    bPropagate(output[j]);
+                    bPropagate(output);
+                   
+                     hiddenCopy[j] = hiddenLayer[j].GetOutput();
 
-                    networkDelta += calculateDelta(output[j]);
 
-                    for(int x = 0; x < hiddenLayer.Length; x++)
-                    {
-                        hiddenCopy[j][x] = hiddenLayer[x].getOutput();
-                    }
-                    for (int x = 0; x < outputLayer.Length; x++)
-                    {
-                        outputCopy[j][x] = outputLayer[x].getOutput();
-                    }
-                    
-                    if(calculateDelta(output[j]) < finalDelta)
-                    {
-                        finished[j] = true;
-                    }
-                }
-                //Średni błąd
-                networkDelta = networkDelta / input.Count();
+                    outputCopy[j] = outputLayer[j].GetOutput();
 
-                if(allFinished(finished))
-                {
-                    finalResults += "Krok: " + i + " Średnia dokładność: " + networkDelta + "\n";
-                    finalResults += allLayersOutput(input.Length, hiddenCopy, outputCopy);
-
-                    networkDelta = 0;
-                    return finalResults;
+                   
                 }
 
                 i++;
             }
-
-            finalResults += "Zakończone na " + Program.maxEpochCount + " kroku z błędem: " + networkDelta + "\n";
-            finalResults += allLayersOutput(input.Length, hiddenCopy, outputCopy);
-            networkDelta = 0;
-
-            return finalResults;
-        }
-
-        public string test(double[][] data)
-        {
-            string output = "";
-
-            for(int i = 0; i < data.Length; i++)
+            for (int index = 0; index < outputCopy.Length; index++)
             {
-                output += "Dla wzoru nr " + (i + 1) + "\n";
-                fPropagate(data[i]);
-                foreach(Neuron neuron in outputLayer)
-                {
-                    output += neuron.getOutput() + "\n";
-                }
-            }
-            return output;
-        }
-
-        public string allLayersOutput(int length, double[][] hiddenCopy, double[][] outputCopy)
-        {
-            string output = "";
-            for(int i = 0; i < length; i++)
-            {
-                output += "Wzór nr " + (i + 1) + "\n";
-
-                output += "Wyjścia warstwy ukrytej: " + "\n";
-                foreach(double value in hiddenCopy[i])
-                {
-                    output += value + "\n";
-                }
-
-                output += "Wyjścia warstwy wyjściowej: " + "\n";
-                foreach(double value in outputCopy[i])
-                {
-                    output += value + "\n";
-                }
+                outputCopy[index] *= output[index];
             }
 
-            return output;
-        }
-
-        bool allFinished(bool[] tab)
-        {
-            foreach(bool value in tab)
-            {
-                if (value == false)
-                    return false;
-            }
-            return true;
+            return outputCopy;
         }
 
         private void fPropagate(double[] data)
         {
-            for(int i = 0; i < data.Length; i++)
+            for (int i = 0; i < data.Length; i++)
             {
-                inputLayer[i].setInput(data[i], 0);
+                inputLayer[i].SetInput(data[i]);
             }
 
             calculateInputs(inputLayer);
@@ -181,18 +105,17 @@ namespace intAnaliza3
 
         private void bPropagate(double[] data)
         {
-            for (int i = 0; i < outputLayer.Length; i++)
+            for (int i = 0; i < data.Length; i++)
             {
                 outputLayer[i].DeltaOutput(data[i]);
             }
-
             double deltaSum = 0;
             for(int i2 = 0; i2 < hiddenLayer.Length; i2++)
             {
                 deltaSum = 0;
                 for(int j = 0; j < outputLayer.Length; j++)
                 {
-                    deltaSum = deltaSum + outputLayer[j].getDelta() * outputLayer[j].getWeight(i2);
+                    deltaSum = deltaSum + outputLayer[j].GetDelta() * outputLayer[j].GetWeight(i2);
                 }
                 hiddenLayer[i2].DeltaHidden(deltaSum);
             }
@@ -206,7 +129,7 @@ namespace intAnaliza3
         {
             for(int i = 0; i < layer.Length; i++)
             {
-                layer[i].calculateWeights();
+                layer[i].CalculateWeights();
             }
         }
 
@@ -214,7 +137,7 @@ namespace intAnaliza3
         {
             for(int i = 0; i < layer.Length; i++)
             {
-                layer[i].calculateOutputs();
+                layer[i].CalculateOutputs();
             }
         }
 
@@ -224,18 +147,18 @@ namespace intAnaliza3
             {
                 for(int j = 0; j < currentLayer.Length; j++)
                 {
-                    currentLayer[j].setInput(calculatedLayer[i].getOutput(), i);
+                    currentLayer[j].SetInput(calculatedLayer[i].GetOutput());
                 }
             }
         }
 
-        private double calculateDelta(double[] expected)
+        private double CalculateDelta(double[] expected)
         {
             double sum = 0;
 
             for(int i = 0; i < outputLayer.Length; i++)
             {
-                sum += (outputLayer[i].getOutput() - expected[i]) * (outputLayer[i].getOutput() - expected[i]);
+                sum += (outputLayer[i].GetOutput() - expected[i]) * (outputLayer[i].GetOutput() - expected[i]);
             }
 
             return sum / outputLayer.Length;

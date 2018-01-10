@@ -4,13 +4,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace intAnaliza3
+namespace Perceptron
 {
     class Neuron
     {
-        private double[] input; // x
-        private double[] weights; // w
-        private double output { get; set; } = 0; //y
+        private double[] input;
+        private double[] weights;
+        private double output { get; set; } = 0;
         private double bias;
         private bool isSigmoid;
         private double sum = 0;
@@ -21,7 +21,6 @@ namespace intAnaliza3
 
         public Neuron(bool isSigmoid, int inputLength)
         {
-
             this.isSigmoid = isSigmoid;
             Random random = new Random();
             input = new double[inputLength];
@@ -37,67 +36,57 @@ namespace intAnaliza3
                 this.bias = 0;
             }
 
-            //losuj wagi
+            //losowanie wag
             for (int i = 0; i < weights.Count(); i++)
             {
                 weights[i] = random.NextDouble() - 0.5;
                 previousWeights[i] = weights[i];
             }
-
-
         }
 
-        //Wartość sigmoidy
         private double Sigmoid()
         {
             return 1.0 / (1.0 + Math.Exp(-this.sum));
         }
 
-        //wartosc pochodnej z sigmoidy
         private double SigmoidDerivative()
         {
             return Sigmoid() * (1 - Sigmoid());
         }
 
-        //błąd wartości warstwy wyjściowej
         public void DeltaOutput(double expectedValue)
         {
             delta = SigmoidDerivative() * (expectedValue - output);
         }
 
-        //błąd wartości warstwy ukrytej
         public void DeltaHidden(double outputLayerDeltaSum)
         {
             delta = SigmoidDerivative() * outputLayerDeltaSum;
         }
 
-        public void SetInput(double newValue, int index)
+        public void SetInput(double newValue)
         {
-            input[index] = newValue;
+            input[0] = newValue;
         }
 
-        //pobierz wartosc wag
         public double GetWeight(int index)
         {
             return weights[index];
         }
 
-        //Sumator
         public void CalculateSum()
         {
             this.sum = 0;
             for (int i = 0; i < input.Length; i++)
             {
-                this.sum = this.sum + input[i] * weights[i];
+                this.sum += input[i] * weights[i];
             }
-            //jesli bias jest dolaczony dodaj wartosc z niego
             if (Program.biasIncluded)
             {
                 this.sum = this.sum + this.bias;
             }
         }
 
-        //oblicz wartosci wyjsciowe
         public void CalculateOutputs()
         {
             CalculateSum();
@@ -111,12 +100,11 @@ namespace intAnaliza3
             }
         }
 
-        //oblicz wartosci wag
         public void CalculateWeights()
         {
             double tmpWeight;
             double tmpBias;
-            //policz wszystkie 4 wagi ze wzoru
+
             for (int i = 0; i < weights.Length; i++)
             {
                 tmpWeight = weights[i];

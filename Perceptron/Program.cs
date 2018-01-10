@@ -4,41 +4,55 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace intAnaliza3
+namespace Perceptron
 {
     class Program
     {
-        public static double stepSize = 1;
-        public static int maxEpochCount = 100000;
+        public static double stepSize = 0.1;    // Współczynnik nauczania
+        public static int maxEpochCount = 1000;
         public static bool biasIncluded = true;
 
-        public static int inputNeurons = 4;
-        public static int hiddenNeurons = 2;
-        public static int outputNeurons = 4;
+        public static int inputNeurons = 5;
+        public static int hiddenNeurons = 10;
+        public static int outputNeurons = 5;
 
         static void Main(string[] args)
         {
-            double[][] input = new double[4][];
-            double[][] output = new double[4][];
-            double[][] test = new double[4][];
+            double[] input = new double[5];
+            double[] output = new double[5];
+            double[] result;
+            string[] lines = new string[5];
 
-            input[0] = output[0] = new double[] { 1,0,0,0};
-            input[1] = output[1] = new double[] { 0,1,0,0};
-            input[2] = output[2] = new double[] { 0,0,1,0};
-            input[3] = output[3] = new double[] { 0,0,0, 1};
+            Random rand = new Random();
 
-            test[0] = new double[] { 1, 0, 0, 0 };
-            test[1] = new double[] { 0, 0, 1, 0 };
-            test[2] = new double[] { 0, 0, 0, 1 };
-            test[3] = new double[] { 0, 1, 0, 0 };
+            for (int i = 0; i < 5; i++)
+            {
+                input[i] = rand.NextDouble() * (100.0 - 1.0) + 1.0;
+                output[i] = Math.Sqrt(input[i]);
+            }
 
             Network network = new Network(inputNeurons, hiddenNeurons, outputNeurons);
 
-            Console.WriteLine(network.train(input, output, 0.00001, maxEpochCount));
-            Console.WriteLine("Test:");
-            Console.WriteLine(network.test(test));
+            result = network.train(input, output, maxEpochCount);
 
-            Console.ReadLine();
-        } 
+            for (int i = 0; i < 5; i++)
+            {
+                lines[i] =  input[i] + "   " + output[i] + "   " + result[i];
+            }
+
+            System.IO.File.WriteAllLines("data.txt", lines);
+
+            using (System.IO.StreamWriter file = new System.IO.StreamWriter("data.txt", true))
+            {
+                for (int i = 0; i < 5; i++)
+                {
+                    file.WriteLine(input[i] + "   " + output[i] + "   " + result[i]);
+                }
+                file.WriteLine(stepSize);
+                file.WriteLine(maxEpochCount);
+            }
+
+                Console.ReadLine();
+        }
     }
 }
