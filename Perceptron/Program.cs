@@ -9,7 +9,7 @@ namespace Perceptron
     class Program
     {
         public static double stepSize = 0.1;    // Współczynnik nauczania
-        public static int maxEpochCount = 1000;
+        public static int maxEpochCount = 10000;
         public static bool biasIncluded = true;
 
         public static int inputNeurons = 5;
@@ -35,24 +35,28 @@ namespace Perceptron
 
             result = network.train(input, output, maxEpochCount);
 
-            for (int i = 0; i < 5; i++)
-            {
-                lines[i] =  input[i] + "   " + output[i] + "   " + result[i];
-            }
-
-            System.IO.File.WriteAllLines("data.txt", lines);
-
-            using (System.IO.StreamWriter file = new System.IO.StreamWriter("data.txt", true))
+            using (System.IO.StreamWriter file = new System.IO.StreamWriter("data.txt", false))
             {
                 for (int i = 0; i < 5; i++)
                 {
-                    file.WriteLine(input[i] + "   " + output[i] + "   " + result[i]);
+                    file.WriteLine(input[i] + "   " + output[i] + "   " + result[i] + "   " + Math.Abs(output[i] - result[i]));
                 }
                 file.WriteLine(stepSize);
                 file.WriteLine(maxEpochCount);
+                file.WriteLine(CalculateGlobalAverageError(output, result));
+            }
+        }
+
+        private static double CalculateGlobalAverageError(double[] expected, double[] results)
+        {
+            double counter = 0;
+
+            for (int i = 0; i < expected.Length; i++)
+            {
+                counter += Math.Abs(expected[i] - results[i]);
             }
 
-                Console.ReadLine();
+            return (counter / expected.Length);
         }
     }
 }
